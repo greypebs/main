@@ -13,18 +13,13 @@ export const authOptions = {
   ],
   callbacks: {
     async session({ session, user }) {
-      return session; // Modify as needed
+      if (session.user) {
+        session.user.id = user.id;
+        session.user.credits = user.credits;
+        session.user.score = user.score;
+      }
+      return session;
     },
-    async signIn({ user, account, profile }) {
-      return true; // Modify as needed
-    },
-  },
-  pages: {
-    signIn: '/auth/signin',
-    // You can customize other pages here if needed
-  },
-  session: {
-    strategy: 'jwt', // Ensure this is a valid SessionStrategy
   },
 };
 

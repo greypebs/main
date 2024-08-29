@@ -1,21 +1,22 @@
-import { shortenLink } from '../../../lib/bitly';
-import { limiter } from '../../../middleware';
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import prisma from "@/lib/prisma";
 
-export default async function handler(req, res) {
-  await limiter(req, res);
-  
-  if (req.method === 'POST') {
-    const { longUrl } = req.body;
-    const accessToken = process.env.BITLY_ACCESS_TOKEN;
+export const authOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
+  callbacks: {
+    async session({ session, user }) {
+      session.user.id = user.id;
+      return session;
+    },
+  },
+};
 
-    try {
-      const shortUrl = await shortenLink(longUrl, accessToken);
-      res.status(200).json({ shortUrl });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to shorten link' });
-    }
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-}
+export default NextAuth(authOptions);
